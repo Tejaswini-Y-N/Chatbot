@@ -55,7 +55,6 @@ Try sending messages like:
 - Update the chatbot UI in the embedded or external CSS section.
 - Swap images (`jss.png`, `bot-avatar.png`) to personalize branding.
 
-## 📷 Screenshots
 
 
 
