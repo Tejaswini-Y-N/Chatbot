@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot with NLP</title>
+    <link rel="stylesheet" href="style.css"> <!-- Link to CSS file -->
+    <script src="https://unpkg.com/compromise"></script> <!-- Include compromise library -->
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #000000;
+            background-image: url('background.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        #chat-container {
+            width: 400px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        #chat-header {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+            background-color: #000000d2;
+            color: #fff;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+        #chat-header img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        #chat-display {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        .message {
+            margin: 8px 0;
+            padding: 10px;
+            border-radius: 5px;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .user-message {
+            background-color: #d1e7dd;
+            align-self: flex-end;
+        }
+        .bot-message {
+            background-color: #ffffff;
+            align-self: flex-start;
+            display: flex;
+            align-items: center;
+        }
+        .bot-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        #input-container {
+            display: flex;
+            padding: 10px;
+        }
+        #input-container input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        #input-container button {
+            margin-left: 5px;
+            padding: 8px;
+            border: none;
+            background-color: #007bff;
+            color: #ffffff;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #typing-indicator {
+            display: none;
+            padding: 10px;
+            font-style: italic;
+            color: gray;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-container">
+        <!-- Chat Header with Logo -->
+        <div id="chat-header">
+            <img src="jss.png" alt="Chatbot Logo">
+            <h1>JSPT ChatBot</h1>
+        </div>
+        <!-- Chat Display -->
+        <div id="chat-display"></div>
+        <!-- Typing Indicator -->
+        <div id="typing-indicator">JSPT is typing...</div>
+        <!-- Input Section -->
+        <div id="input-container">
+            <input type="text" id="user-input" placeholder="Type a message...">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const chatDisplay = document.getElementById("chat-display");
+        const userInput = document.getElementById("user-input");
+        const typingIndicator = document.getElementById("typing-indicator");
+
+        // Predefined responses for the chatbot
+        const responses = {
+            "hi": "Hi there! How can I assist you today?",
+            "hii": "Hi there! How can I assist you today?",
+            "Hi": "Hi there! How can I assist you today?",
+            "Hii": "Hi there! How can I assist you today?",
+            "Hello": "Hi there! How can I assist you today?",
+            "hello": "Hi there! How can I assist you today?",
+            "how are you": "I'm good, what about you!",
+            "how r u": "I'm good, what about you!",
+            "what is ai": "AI stands for Artificial Intelligence, the simulation of human intelligence by machines.",
+            "tell me a joke": "Why don't programmers like nature? It has too many bugs.",
+            "tell a joke": "Why don't programmers like nature? It has too many bugs.",
+            "who made you": "I was created by a group of student's from JSSATEB to assist you!",
+            "who created you": "I was created by a group of student's from JSSATEB to assist you!",
+            "what is your name": "I'm JSPT ChatBot, your virtual assistant.",
+            "what is ur name": "I'm JSPT ChatBot, your virtual assistant.",
+            "what is u r name": "I'm JSPT ChatBot, your virtual assistant.",
+            "what's u r name": "I'm JSPT ChatBot, your virtual assistant.",
+            "what's ur name": "I'm JSPT ChatBot, your virtual assistant.",
+            "bye": "Goodbye! Have a great day!",
+            "help": "Sure, let me know what you need help with",
+            "hod of ise": "Dr. Nagamani N.P", 
+            "HOD of ISE": "Dr. Nagamani N.P",
+            "principal of jssateb": "Dr. Bhimasen Soragaon",
+            "Principal of JSSATEB": "Dr. Bhimasen Soragaon",
+            "teaching faculty of ise": "Dr. D V Ashoka, Dr. Rekha P.M, Dr. Naidila Sadashiv, Dr. Nagamani N.P, Dr.Nethravathi. B, Dr. Sowmya K.N, Dr. Abhijith H V, Dr. Sreenatha.M, Mrs. Mamatha.G, Mrs. Nagashree S, Mrs. Sudha P.R, Mrs. Sahana V, Mrs. Punitha M, Ms.Sukrutha C Basappa, Mrs.Kavya T C, Mrs.Reshma B, Mr.Chetan R, Mrs. Basamma Umesh Patil, Mrs. B Gayathri Kamath, Mrs. Manasa D S, Mrs. Shylashree U R, 	Mrs. Deepa Konnur, Mrs. Pushpalatha V",
+            "Teaching Faculty of ISE": "Dr. D V Ashoka, Dr. Rekha P.M, Dr. Naidila Sadashiv, Dr. Nagamani N.P, Dr.Nethravathi. B, Dr. Sowmya K.N, Dr. Abhijith H V, Dr. Sreenatha.M, Mrs. Mamatha.G, Mrs. Nagashree S, Mrs. Sudha P.R, Mrs. Sahana V, Mrs. Punitha M, Ms.Sukrutha C Basappa, Mrs.Kavya T C, Mrs.Reshma B, Mr.Chetan R, Mrs. Basamma Umesh Patil, Mrs. B Gayathri Kamath, Mrs. Manasa D S, Mrs. Shylashree U R, 	Mrs. Deepa Konnur, Mrs. Pushpalatha V",
+            "technical staff of ise": "Mr. Gajendra J, Mrs. Sowmya G, Mr. Mahendra M, Mr. Manjunatha H S, Ms. Sowmya P",
+            "Technical Staff of ISE": "Mr. Gajendra J, Mrs. Sowmya G, Mr. Mahendra M, Mr. Manjunatha H S, Ms. Sowmya P",
+            "where to check the attendance": "https://jssateb.azurewebsites.net/Apps/Login.aspx",
+            "Where to check the attendance": "https://jssateb.azurewebsites.net/Apps/Login.aspx",
+            "how to check the attendance": "https://jssateb.azurewebsites.net/Apps/Login.aspx",
+            "How to check the attendance": "https://jssateb.azurewebsites.net/Apps/Login.aspx",
+            "how to check exam results": "https://results.vtu.ac.in/index.php",
+            "How to check exam results": "https://results.vtu.ac.in/index.php",
+            "exam fees link": "https://www.onlinesbi.sbi/sbicollect/icollecthome.htm?corpID=5786614",
+            "Exam fees link": "https://www.onlinesbi.sbi/sbicollect/icollecthome.htm?corpID=5786614",
+        };
+
+        function sendMessage() {
+            const messageText = userInput.value.trim();
+            if (messageText === "") return;
+
+            addMessage(userInput.value, "user"); // Display the user's message
+            userInput.value = "";
+
+            typingIndicator.style.display = "block"; // Show typing indicator
+
+            // Generate bot response
+            setTimeout(() => {
+                const botResponse = getBotResponse(messageText);
+                addMessage(botResponse, "bot");
+                typingIndicator.style.display = "none"; // Hide typing indicator
+            }, 1000);
+        }
+
+        function getBotResponse(userMessage) {
+            // Use compromise to analyze input
+            const doc = nlp(userMessage);
+
+            // Extract normalized text for better matching
+            const normalizedMessage = doc.text().toLowerCase();
+
+            // Check if there's a predefined response
+            for (const key in responses) {
+                if (normalizedMessage.includes(key)) {
+                    return responses[key];
+                }
+            }
+
+            // Default response for unrecognized questions
+            return "I'm sorry, I don't understand that. Can you rephrase?";
+        }
+
+        function addMessage(text, sender) {
+            const message = document.createElement("div");
+            message.classList.add("message", sender === "user" ? "user-message" : "bot-message");
+
+            if (sender === "bot") {
+                const avatar = document.createElement("img");
+                avatar.src = "bot-avatar.png"; // Replace with your bot avatar image
+                avatar.alt = "Bot Avatar";
+                avatar.classList.add("bot-avatar");
+                message.appendChild(avatar);
+            }
+
+            const messageText = document.createElement("span");
+            messageText.textContent = text;
+            message.appendChild(messageText);
+
+            chatDisplay.appendChild(message);
+            chatDisplay.scrollTop = chatDisplay.scrollHeight; // Auto-scroll to the latest message
+        }
+
+        // Allow sending messages using Enter key
+        userInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") {
+                sendMessage();
+            }
+        });
+    </script>
+    
+</body>
+</html>
